@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { X } from 'lucide-react';
-import { auth } from '../firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { auth, loginWithGoogle } from '../firebase';
 
 interface AuthModalProps {
   onClose: () => void;
@@ -10,56 +9,24 @@ interface AuthModalProps {
 }
 
 export function AuthModal({ onClose, onLogin }: AuthModalProps) {
-  const [isLogin, setIsLogin] = useState(true);
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
+  const handleGoogleLogin = async () => {
     try {
-      if (isLogin) {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        onLogin({
-          id: userCredential.user.uid,
-          name: userCredential.user.displayName || 'Usuario',
-          email: userCredential.user.email,
-          photoUrl: userCredential.user.photoURL
-        });
-      } else {
-        if (!name.trim()) {
-          throw new Error('El nombre es obligatorio.');
-        }
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        await updateProfile(userCredential.user, { displayName: name });
-        
-        onLogin({
-          id: userCredential.user.uid,
-          name: name,
-          email: userCredential.user.email,
-          photoUrl: null
-        });
-      }
+      setError('');
+      setLoading(true);
+      const result = await loginWithGoogle();
+      const user = result.user;
+      onLogin({
+        id: user.uid,
+        name: user.displayName || 'Usuario',
+        email: user.email,
+        photoUrl: user.photoURL
+      });
     } catch (err: any) {
-      if (err.message === 'El nombre es obligatorio.') {
-        setError(err.message);
-      } else if (err.code === 'auth/email-already-in-use') {
-        setError('Ese correo ya está registrado.');
-      } else if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
-        setError('Correo o contraseña incorrectos.');
-      } else if (err.code === 'auth/weak-password') {
-        setError('La contraseña debe tener al menos 6 caracteres.');
-      } else if (err.code === 'auth/operation-not-allowed') {
-        setError('El proveedor de correo/contraseña no está habilitado. Habilítalo en Firebase Console.');
-      } else {
-        console.error('Error detallado de autenticación:', err);
-        setError(err.message || 'Ocurrió un error en la autenticación.');
-      }
+      console.error(err);
+      setError('Error al iniciar sesión con Google.');
     } finally {
       setLoading(false);
     }
@@ -72,71 +39,19 @@ export function AuthModal({ onClose, onLogin }: AuthModalProps) {
           <X size={20} />
         </button>
         
-        <h3 className="text-2xl font-black mb-2 text-zinc-900">{isLogin ? 'Iniciar Sesión' : 'Crea tu Cuenta'}</h3>
-        <p className="text-zinc-500 text-sm mb-6">
-          {isLogin ? 'Accede a tus reservas y preferencias.' : 'Regístrate para agendar clases.'}
-        </p>
-
+        <h3 className="text-2xl font-black mb-2 text-zinc-900">Iniciar Sesión</h3>
+        <p className="text-zinc-500 text-sm mb-6">Usa tu cuenta de Google para agendar clases y gestionar reservas.</p>
+        
         {error && <div className="bg-red-50 text-red-500 p-3 rounded-xl text-sm mb-4 font-medium">{error}</div>}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {!isLogin && (
-            <div>
-              <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">Nombre Completo</label>
-              <input 
-                type="text" 
-                required 
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full bg-zinc-50 border border-zinc-200 px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 transition-shadow" 
-                placeholder="Juan Pérez" 
-              />
-            </div>
-          )}
-          
-          <div>
-            <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">Correo Electrónico</label>
-            <input 
-              type="email" 
-              required 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-zinc-50 border border-zinc-200 px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 transition-shadow" 
-              placeholder="juan@ejemplo.com" 
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">Contraseña</label>
-            <input 
-              type="password" 
-              required 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-zinc-50 border border-zinc-200 px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 transition-shadow" 
-              placeholder="••••••••" 
-            />
-          </div>
-
-          <button 
-            type="submit" 
-            disabled={loading}
-            className="w-full bg-green-500 text-white font-bold py-4 rounded-xl hover:bg-green-600 transition-colors mt-2 disabled:opacity-50"
-          >
-            {loading ? 'Cargando...' : (isLogin ? 'Ingresar' : 'Registrarse')}
-          </button>
-        </form>
-
-        <div className="mt-6 text-center text-sm font-medium text-zinc-500">
-          {isLogin ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'}
-          <button 
-            type="button" 
-            onClick={() => { setIsLogin(!isLogin); setError(''); }} 
-            className="ml-2 text-green-600 font-bold hover:underline"
-          >
-            {isLogin ? 'Regístrate aquí' : 'Inicia Sesión'}
-          </button>
-        </div>
+        
+        <button 
+          onClick={handleGoogleLogin} 
+          disabled={loading}
+          className="w-full flex items-center justify-center gap-3 bg-white border-2 border-zinc-200 text-zinc-900 font-bold py-4 rounded-xl hover:bg-zinc-50 hover:border-zinc-300 transition-colors disabled:opacity-50"
+        >
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-6 h-6" />
+          {loading ? 'Cargando...' : 'Continuar con Google'}
+        </button>
       </motion.div>
     </motion.div>
   );
