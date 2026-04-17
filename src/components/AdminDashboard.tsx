@@ -59,11 +59,36 @@ export function AdminDashboard({ onClose, showToast }: AdminDashboardProps) {
                 <div className="grid gap-4">
                   {users.map(u => (
                     <div key={u.id} className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-200">
-                       <div className="flex justify-between items-center mb-4">
+                       <div className="flex justify-between items-start mb-4">
                          <div>
-                           <div className="text-sm font-bold text-zinc-500">ID: {u.id}</div>
+                           <div className="font-bold text-lg text-zinc-900">{u.name}</div>
+                           <div className="text-sm text-zinc-500">{u.email}</div>
+                           <div className="text-xs text-zinc-400 mt-1">ID: {u.id}</div>
                            {u.preferences && <div className="text-sm bg-zinc-100 mt-2 p-2 rounded-lg inline-block">Nivel preferido: <span className="font-bold">{u.preferences.level}</span></div>}
                          </div>
+                         <button 
+                           onClick={async () => {
+                             if(confirm(`¿Estás seguro de eliminar el registro y todas las reservas del usuario ${u.name}?`)) {
+                               try {
+                                 // Delete user document
+                                 await deleteDoc(doc(db, 'users', u.id));
+                                 // Delete user's reservations
+                                 const userReservations = reservations.filter(r => r.userId === u.id);
+                                 for (const r of userReservations) {
+                                   await deleteDoc(doc(db, 'reservations', r.id));
+                                 }
+                                 showToast(`Usuario ${u.name} y sus reservas eliminados`, 'success');
+                               } catch(err) {
+                                 console.error(err);
+                                 showToast('Error al eliminar usuario', 'error');
+                               }
+                             }
+                           }}
+                           className="text-zinc-400 hover:text-red-500 p-2 bg-zinc-50 hover:bg-red-50 rounded-lg transition"
+                           title="Eliminar usuario y sus reservas"
+                         >
+                           <Trash2 size={20} />
+                         </button>
                        </div>
                        
                        <div className="border-t border-zinc-100 pt-4 mt-2">

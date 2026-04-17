@@ -29,24 +29,20 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        const uInfo = {
-          id: user.uid,
-          name: user.displayName || 'Usuario',
-          email: user.email,
-          photoUrl: user.photoURL
-        };
-        setCurrentUser(uInfo);
-        
-        // Upsert user into firestore
-        try {
-          await setDoc(doc(db, 'users', user.uid), {
+        setCurrentUser((prev: any) => {
+          if (prev && prev.id === user.uid && prev.name !== 'Usuario') {
+            return prev;
+          }
+          return {
             id: user.uid,
             name: user.displayName || 'Usuario',
-            email: user.email
-          }, { merge: true });
-        } catch (e) {
-          console.error("Error al registrar usuario en db", e);
-        }
+            email: user.email,
+            photoUrl: user.photoURL
+          };
+        });
+        
+        // El upsert a firestore ahora se maneja principlamente en handleLogin
+        // para garantizar que tenemos el nombre completo.
       } else {
         setCurrentUser(null);
       }
@@ -154,9 +150,19 @@ export default function App() {
     }
   };
 
-  const handleLogin = (user: any) => {
-    // CurrentUser is set by onAuthStateChanged
+  const handleLogin = async (user: any) => {
+    setCurrentUser(user);
     setShowAuthModal(false);
+    
+    try {
+      await setDoc(doc(db, 'users', user.id), {
+        id: user.id,
+        name: user.name,
+        email: user.email
+      }, { merge: true });
+    } catch (e) {
+      console.error("Error al registrar usuario en db", e);
+    }
   };
 
   const handleLogout = async () => {
