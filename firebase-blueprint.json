@@ -1,0 +1,48 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile, preferences and payment history",
+      "type": "object",
+      "properties": {
+        "preferences": {
+          "type": "object",
+          "properties": {
+            "level": { "type": "string" },
+            "notifications": { "type": "boolean" }
+          }
+        },
+        "paymentHistory": {
+          "type": "array",
+          "items": { "type": "object" }
+        }
+      }
+    },
+    "Reservation": {
+      "title": "Reservation",
+      "description": "A class booking",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "level": { "type": "string" },
+        "date": { "type": "string" },
+        "day": { "type": "string" },
+        "time": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "name", "date", "time"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User documents."
+    },
+    "/reservations/{reservationId}": {
+      "schema": { "$ref": "#/entities/Reservation" },
+      "description": "Class reservations."
+    }
+  }
+}
