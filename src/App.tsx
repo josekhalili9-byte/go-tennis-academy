@@ -7,11 +7,10 @@ import { InteractiveCalendar } from './components/InteractiveCalendar';
 import { AuthModal } from './components/AuthModal';
 import { UserDashboard } from './components/UserDashboard';
 import { AdminDashboard } from './components/AdminDashboard';
-import AiCoach from './components/AiCoach';
 import { MapPin, Phone, Clock, Plus, Trash2, Menu, X, CheckCircle, Navigation, Award, Users, User, LogIn } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
-import { db, auth, logoutGoogle } from './firebase';
+import { db, auth, logoutUser } from './firebase';
 import { collection, doc, setDoc, deleteDoc, onSnapshot, query, arrayUnion } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 
@@ -161,7 +160,7 @@ export default function App() {
   };
 
   const handleLogout = async () => {
-    await logoutGoogle();
+    await logoutUser();
     setShowUserDashboard(false);
     showToast('Sesión cerrada correctamente', 'success');
   };
@@ -711,10 +710,6 @@ export default function App() {
         <p className="font-medium text-sm">© {new Date().getFullYear()} Go Tennis Academy. Todos los derechos reservados.</p>
         <p className="text-xs uppercase tracking-widest mt-2 text-zinc-600">Built with Google AI Studio</p>
       </footer>
-
-      {/* AI COACH WIDGET */}
-      <AiCoach contextData={{...content, adminModeActive: isAdmin}} />
-
     </div>
   );
 }
