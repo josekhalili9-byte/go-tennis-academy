@@ -54,8 +54,11 @@ export function AuthModal({ onClose, onLogin }: AuthModalProps) {
         setError('Correo o contraseña incorrectos.');
       } else if (err.code === 'auth/weak-password') {
         setError('La contraseña debe tener al menos 6 caracteres.');
+      } else if (err.code === 'auth/operation-not-allowed') {
+        setError('El proveedor de correo/contraseña no está habilitado. Habilítalo en Firebase Console.');
       } else {
-        setError('Ocurrió un error en la autenticación.');
+        console.error('Error detallado de autenticación:', err);
+        setError(err.message || 'Ocurrió un error en la autenticación.');
       }
     } finally {
       setLoading(false);
